@@ -20,7 +20,7 @@ export function VideoConsole({
   return (
     <Card className="relative flex-1 bg-gradient-card border-border/50 shadow-card overflow-hidden">
       {/* Video Area */}
-      <div className="aspect-video bg-muted/20 flex items-center justify-center relative">
+      <div className="aspect-video bg-muted/50 flex items-center justify-center relative border border-border/30">
         {isVideoOff ? (
           <div className="flex flex-col items-center gap-4 text-muted-foreground">
             <VideoOff size={64} />
