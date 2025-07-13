@@ -3,45 +3,11 @@ import { VideoConsole } from "./VideoConsole";
 import { ChatConsole } from "./ChatConsole";
 import { ConnectionButton } from "./ConnectionButton";
 
-interface Message {
-  id: string;
-  text: string;
-  timestamp: Date;
-  isOwn: boolean;
-}
-
 export function VideoCallApp() {
   const [isConnected, setIsConnected] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
 
   const handleConnectionChange = (connected: boolean) => {
     setIsConnected(connected);
-  };
-
-  const handleSendMessage = (text: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text,
-      timestamp: new Date(),
-      isOwn: true,
-    };
-    setMessages(prev => [...prev, newMessage]);
-
-    // Note: With Pipecat, user messages will be sent through the client
-    // and bot responses will come through RTVI events
-    // We'll implement this in the next step
-  };
-
-  const handleToggleMute = () => {
-    setIsMuted(!isMuted);
-    // TODO: Integrate with Pipecat mic controls
-  };
-
-  const handleToggleVideo = () => {
-    setIsVideoOff(!isVideoOff);
-    // TODO: Integrate with Pipecat camera controls
   };
 
   return (
@@ -61,13 +27,7 @@ export function VideoCallApp() {
         <div className="flex gap-6 h-[calc(100vh-200px)]">
           {/* Video Section */}
           <div className="flex-1 flex flex-col gap-6">
-            <VideoConsole
-              isConnected={isConnected}
-              isMuted={isMuted}
-              isVideoOff={isVideoOff}
-              onToggleMute={handleToggleMute}
-              onToggleVideo={handleToggleVideo}
-            />
+            <VideoConsole isConnected={isConnected} />
             
             {/* Connection Controls */}
             <div className="flex justify-center">
@@ -76,10 +36,7 @@ export function VideoCallApp() {
           </div>
 
           {/* Chat Section */}
-          <ChatConsole
-            messages={messages}
-            onSendMessage={handleSendMessage}
-          />
+          <ChatConsole isConnected={isConnected} />
         </div>
 
         {/* Footer */}
