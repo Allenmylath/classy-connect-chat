@@ -95,10 +95,10 @@ export function VideoCallApp() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-            Video Call Studio
+            StreamConnect Pro
           </h1>
           <p className="text-muted-foreground">
-            Professional video calling with real-time chat
+            Next-generation video calling with seamless chat integration
           </p>
         </div>
 
