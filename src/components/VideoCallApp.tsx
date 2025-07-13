@@ -2,7 +2,6 @@ import { useState } from "react";
 import { VideoConsole } from "./VideoConsole";
 import { ChatConsole } from "./ChatConsole";
 import { ConnectionButton } from "./ConnectionButton";
-import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -13,34 +12,12 @@ interface Message {
 
 export function VideoCallApp() {
   const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const { toast } = useToast();
 
-  const handleToggleConnection = async () => {
-    if (isConnected) {
-      // Disconnect
-      setIsConnected(false);
-      toast({
-        title: "Call ended",
-        description: "You have disconnected from the call.",
-        variant: "destructive",
-      });
-    } else {
-      // Connect
-      setIsConnecting(true);
-      // Simulate connection process
-      setTimeout(() => {
-        setIsConnecting(false);
-        setIsConnected(true);
-        toast({
-          title: "Connected!",
-          description: "You are now connected to the video call.",
-        });
-      }, 2000);
-    }
+  const handleConnectionChange = (connected: boolean) => {
+    setIsConnected(connected);
   };
 
   const handleSendMessage = (text: string) => {
@@ -52,41 +29,19 @@ export function VideoCallApp() {
     };
     setMessages(prev => [...prev, newMessage]);
 
-    // Simulate receiving a response (for demo purposes)
-    if (isConnected) {
-      setTimeout(() => {
-        const responses = [
-          "Got it, thanks!",
-          "Sounds good to me",
-          "I agree with that",
-          "Let me think about that",
-          "That's interesting!",
-        ];
-        const responseMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: responses[Math.floor(Math.random() * responses.length)],
-          timestamp: new Date(),
-          isOwn: false,
-        };
-        setMessages(prev => [...prev, responseMessage]);
-      }, 1000 + Math.random() * 2000);
-    }
+    // Note: With Pipecat, user messages will be sent through the client
+    // and bot responses will come through RTVI events
+    // We'll implement this in the next step
   };
 
   const handleToggleMute = () => {
     setIsMuted(!isMuted);
-    toast({
-      title: isMuted ? "Unmuted" : "Muted",
-      description: `Microphone is now ${isMuted ? "on" : "off"}.`,
-    });
+    // TODO: Integrate with Pipecat mic controls
   };
 
   const handleToggleVideo = () => {
     setIsVideoOff(!isVideoOff);
-    toast({
-      title: isVideoOff ? "Camera on" : "Camera off",
-      description: `Video is now ${isVideoOff ? "enabled" : "disabled"}.`,
-    });
+    // TODO: Integrate with Pipecat camera controls
   };
 
   return (
@@ -98,7 +53,7 @@ export function VideoCallApp() {
             StreamConnect Pro
           </h1>
           <p className="text-muted-foreground">
-            Next-generation video calling with seamless chat integration
+            Next-generation AI video calling with Pipecat integration
           </p>
         </div>
 
@@ -116,11 +71,7 @@ export function VideoCallApp() {
             
             {/* Connection Controls */}
             <div className="flex justify-center">
-              <ConnectionButton
-                isConnected={isConnected}
-                isConnecting={isConnecting}
-                onToggleConnection={handleToggleConnection}
-              />
+              <ConnectionButton onConnectionChange={handleConnectionChange} />
             </div>
           </div>
 
@@ -133,7 +84,7 @@ export function VideoCallApp() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          <p>Click connect to start your video call experience</p>
+          <p>Click connect to start your AI-powered video call experience</p>
         </div>
       </div>
     </div>
