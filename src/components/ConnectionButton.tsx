@@ -79,12 +79,13 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
     try {
       setIsConnecting(true);
       
+      // Updated to match the simplified backend endpoint
       await pipecatClient.connect({
         endpoint: `${process.env.VITE_PIPECAT_API_URL || "http://localhost:8000"}/connect`,
         requestData: {
-          // Add any custom data your backend endpoint expects
+          // This matches the ConnectData model in the backend
           services: {
-            llm: "openai",
+            llm: "gemini", 
             tts: "cartesia",
           },
         },
@@ -161,7 +162,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
         <p className="text-sm text-muted-foreground">
           {isConnected 
             ? "Click to end the call" 
-            : "Click to start a video call with AI"
+            : "Click to start a video call with AI (Gemini + Cartesia)"
           }
         </p>
         <p className="text-xs text-muted-foreground mt-1">
