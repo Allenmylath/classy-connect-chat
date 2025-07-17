@@ -69,7 +69,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
 
   // Listen to client ready event
   useRTVIClientEvent(
-    RTVIEvent.ClientReady,
+    RTVIEvent.BotReady,
     useCallback(() => {
       console.log("Client is ready!");
     }, [])
@@ -81,7 +81,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
       
       // Updated to match the simplified backend endpoint
       await pipecatClient.connect({
-        endpoint: `${process.env.VITE_PIPECAT_API_URL || "https://manjujayamurali--pipecat-modal-fastapi-app.modal.run"}/connect`,
+        endpoint: `${import.meta.env.VITE_PIPECAT_API_URL || "https://manjujayamurali--pipecat-modal-fastapi-app.modal.run"}/connect`,
         requestData: {
           // This matches the ConnectData model in the backend
           services: {

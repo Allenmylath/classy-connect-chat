@@ -41,7 +41,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
 
   // Listen to user transcription events (what the user says)
   useRTVIClientEvent(
-    RTVIEvent.UserTranscription,
+    RTVIEvent.UserTranscript,
     useCallback((data: any) => {
       console.log("User transcription:", data);
       
@@ -68,7 +68,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
 
   // Listen to bot LLM text responses
   useRTVIClientEvent(
-    RTVIEvent.BotLLMText,
+    RTVIEvent.BotLlmText,
     useCallback((data: any) => {
       console.log("Bot LLM text:", data);
       
@@ -86,7 +86,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
 
   // Listen to bot transcription (what the bot says)
   useRTVIClientEvent(
-    RTVIEvent.BotTranscription,
+    RTVIEvent.BotTranscript,
     useCallback((data: any) => {
       console.log("Bot transcription:", data);
       
