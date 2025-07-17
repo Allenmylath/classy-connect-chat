@@ -81,7 +81,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
       
       // Updated to match the simplified backend endpoint
       await pipecatClient.connect({
-        endpoint: `${process.env.VITE_PIPECAT_API_URL || "http://localhost:8000"}/connect`,
+        endpoint: `${process.env.VITE_PIPECAT_API_URL || "https://manjujayamurali--pipecat-modal-fastapi-app.modal.run"}/connect`,
         requestData: {
           // This matches the ConnectData model in the backend
           services: {
