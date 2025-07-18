@@ -261,19 +261,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
                 </div>
               ))}
               
-              {/* Show interim transcription */}
-              {currentInterim && (
-                <div className="flex justify-end">
-                  <div className="max-w-[85%] p-3 rounded-lg bg-gradient-button/50 text-primary-foreground border-2 border-primary/30">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Mic size={12} className="opacity-70 animate-pulse" />
-                      <span className="text-xs opacity-70 font-medium">Speaking...</span>
-                    </div>
-                    <p className="text-sm leading-relaxed italic">{currentInterim}</p>
-                  </div>
-                </div>
-              )}
-            </>
+              </>
           )}
         </div>
       </ScrollArea>
