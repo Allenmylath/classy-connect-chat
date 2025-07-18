@@ -12,7 +12,7 @@ interface Message {
   text: string;
   timestamp: Date;
   isOwn: boolean;
-  type: 'text' | 'transcription' | 'interim';
+  type: 'text' | 'transcription';
   final?: boolean;
 }
 
@@ -24,7 +24,6 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
-  const [currentInterim, setCurrentInterim] = useState<string>("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const pipecatClient = usePipecatClient();
@@ -37,48 +36,37 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
     }
-  }, [messages, currentInterim]);
+  }, [messages]);
 
-  // Listen to user transcription events (what the user says)
+  // Listen to user transcription events (what the user says) - FINAL ONLY
   useRTVIClientEvent(
     RTVIEvent.UserTranscript,
     useCallback((data: any) => {
       console.log("🎤 User transcription event:", JSON.stringify(data, null, 2));
       
-      // Handle different possible data structures
       const transcriptText = data?.text || data?.data?.text || "";
       const isFinal = data?.final ?? data?.data?.final ?? false;
       const timestamp = data?.timestamp || data?.data?.timestamp || Date.now();
       
       console.log("Parsed transcript:", { transcriptText, isFinal, timestamp });
       
-      if (isFinal) {
-        // Final transcription - add as a permanent message
-        if (transcriptText && transcriptText.trim()) {
-          console.log("✅ Adding final user transcript:", transcriptText);
-          const message: Message = {
-            id: `user-transcript-${Date.now()}-${Math.random()}`,
-            text: transcriptText.trim(),
-            timestamp: new Date(timestamp),
-            isOwn: true,
-            type: 'transcription',
-            final: true
-          };
-          setMessages(prev => {
-            console.log("Messages before adding user transcript:", prev.length);
-            const newMessages = [...prev, message];
-            console.log("Messages after adding user transcript:", newMessages.length);
-            return newMessages;
-          });
-        }
-        // Clear interim text after final transcript
-        setCurrentInterim("");
-      } else {
-        // Interim transcription - show as temporary text
-        if (transcriptText) {
-          console.log("📝 Setting interim transcript:", transcriptText);
-          setCurrentInterim(transcriptText);
-        }
+      // Only process final transcripts
+      if (isFinal && transcriptText && transcriptText.trim()) {
+        console.log("✅ Adding final user transcript:", transcriptText);
+        const message: Message = {
+          id: `user-transcript-${Date.now()}-${Math.random()}`,
+          text: transcriptText.trim(),
+          timestamp: new Date(timestamp),
+          isOwn: true,
+          type: 'transcription',
+          final: true
+        };
+        setMessages(prev => {
+          console.log("Messages before adding user transcript:", prev.length);
+          const newMessages = [...prev, message];
+          console.log("Messages after adding user transcript:", newMessages.length);
+          return newMessages;
+        });
       }
     }, [])
   );
@@ -89,7 +77,6 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
     useCallback((data: any) => {
       console.log("🤖 Bot transcription event:", JSON.stringify(data, null, 2));
       
-      // Handle different possible data structures
       const transcriptText = data?.text || data?.data?.text || "";
       
       console.log("Parsed bot transcript:", transcriptText);
@@ -184,10 +171,9 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   // Debug info
   useEffect(() => {
     console.log("💬 Current messages count:", messages.length);
-    console.log("🎯 Current interim:", currentInterim);
     console.log("👂 Is listening:", isListening);
     console.log("🔗 Is connected:", isConnected);
-  }, [messages, currentInterim, isListening, isConnected]);
+  }, [messages, isListening, isConnected]);
 
   return (
     <Card className="w-80 bg-gradient-card border-border/50 shadow-card flex flex-col h-full">
@@ -208,20 +194,20 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
         
         {/* Debug Info */}
         <div className="text-xs text-muted-foreground mt-2">
-          Messages: {messages.length} | Interim: {currentInterim ? 'Yes' : 'No'} | Listening: {isListening ? 'Yes' : 'No'}
+          Messages: {messages.length} | Listening: {isListening ? 'Yes' : 'No'}
         </div>
       </div>
       
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
-          {messages.length === 0 && !currentInterim ? (
+          {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               {isConnected ? (
                 <>
                   <p>Connected! Start speaking or type a message.</p>
                   <p className="text-sm mt-2">The AI will respond in real-time.</p>
-                  <p className="text-xs mt-1 opacity-60">Check browser console for transcript events</p>
+                  <p className="text-xs mt-1 opacity-60">Final transcripts only - no interim display</p>
                 </>
               ) : (
                 <>
@@ -231,38 +217,34 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
               )}
             </div>
           ) : (
-            <>
-              {messages.map((message) => (
+            messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+              >
                 <div
-                  key={message.id}
-                  className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                  className={`max-w-[85%] p-3 rounded-lg shadow-sm animate-fade-in ${
+                    message.isOwn
+                      ? 'bg-gradient-button text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground'
+                  }`}
                 >
-                  <div
-                    className={`max-w-[85%] p-3 rounded-lg shadow-sm animate-fade-in ${
-                      message.isOwn
-                        ? 'bg-gradient-button text-primary-foreground'
-                        : 'bg-secondary text-secondary-foreground'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1 mb-1">
-                      {getMessageIcon(message)}
-                      <span className="text-xs opacity-70 font-medium">
-                        {getMessageTypeLabel(message)}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed">{message.text}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </p>
+                  <div className="flex items-center gap-1 mb-1">
+                    {getMessageIcon(message)}
+                    <span className="text-xs opacity-70 font-medium">
+                      {getMessageTypeLabel(message)}
+                    </span>
                   </div>
+                  <p className="text-sm leading-relaxed">{message.text}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {message.timestamp.toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </p>
                 </div>
-              ))}
-              
-              
-            </>
+              </div>
+            ))
           )}
         </div>
       </ScrollArea>
@@ -294,7 +276,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
             {isListening ? (
               <span className="flex items-center justify-center gap-1">
                 <Mic size={12} className="animate-pulse" />
-                Voice detected - speaking to AI
+                Voice detected - processing final transcript
               </span>
             ) : (
               <span>Speak naturally or type your message</span>
