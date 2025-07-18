@@ -37,54 +37,80 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
     }
-  }, [messages]);
+  }, [messages, currentInterim]);
 
   // Listen to user transcription events (what the user says)
   useRTVIClientEvent(
     RTVIEvent.UserTranscript,
     useCallback((data: any) => {
-      console.log("User transcription:", data);
+      console.log("🎤 User transcription event:", JSON.stringify(data, null, 2));
       
-      if (data.final) {
+      // Handle different possible data structures
+      const transcriptText = data?.text || data?.data?.text || "";
+      const isFinal = data?.final ?? data?.data?.final ?? false;
+      const timestamp = data?.timestamp || data?.data?.timestamp || Date.now();
+      
+      console.log("Parsed transcript:", { transcriptText, isFinal, timestamp });
+      
+      if (isFinal) {
         // Final transcription - add as a permanent message
-        if (data.text && data.text.trim()) {
+        if (transcriptText && transcriptText.trim()) {
+          console.log("✅ Adding final user transcript:", transcriptText);
           const message: Message = {
-            id: `user-transcript-${Date.now()}`,
-            text: data.text.trim(),
-            timestamp: new Date(data.timestamp || Date.now()),
+            id: `user-transcript-${Date.now()}-${Math.random()}`,
+            text: transcriptText.trim(),
+            timestamp: new Date(timestamp),
             isOwn: true,
             type: 'transcription',
             final: true
           };
-          setMessages(prev => [...prev, message]);
+          setMessages(prev => {
+            console.log("Messages before adding user transcript:", prev.length);
+            const newMessages = [...prev, message];
+            console.log("Messages after adding user transcript:", newMessages.length);
+            return newMessages;
+          });
         }
-        setCurrentInterim(""); // Clear interim text
+        // Clear interim text after final transcript
+        setCurrentInterim("");
       } else {
         // Interim transcription - show as temporary text
-        if (data.text) {
-          setCurrentInterim(data.text);
+        if (transcriptText) {
+          console.log("📝 Setting interim transcript:", transcriptText);
+          setCurrentInterim(transcriptText);
         }
       }
     }, [])
   );
 
-  // Listen to bot transcription (what the bot says) - ONLY THIS EVENT
+  // Listen to bot transcription (what the bot says)
   useRTVIClientEvent(
     RTVIEvent.BotTranscript,
     useCallback((data: any) => {
-      console.log("Bot transcription:", data);
+      console.log("🤖 Bot transcription event:", JSON.stringify(data, null, 2));
+      
+      // Handle different possible data structures
+      const transcriptText = data?.text || data?.data?.text || "";
+      
+      console.log("Parsed bot transcript:", transcriptText);
       
       // Only add if there's actual text content
-      if (data.text && data.text.trim()) {
+      if (transcriptText && transcriptText.trim()) {
+        console.log("✅ Adding bot transcript:", transcriptText);
         const message: Message = {
           id: `bot-transcript-${Date.now()}-${Math.random()}`,
-          text: data.text.trim(),
+          text: transcriptText.trim(),
           timestamp: new Date(),
           isOwn: false,
           type: 'transcription'
         };
         
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => {
+          console.log("Messages before adding bot transcript:", prev.length);
+          const newMessages = [...prev, message];
+          console.log("Messages after adding bot transcript:", newMessages.length);
+          return newMessages;
+        });
       }
     }, [])
   );
@@ -93,7 +119,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   useRTVIClientEvent(
     RTVIEvent.UserStartedSpeaking,
     useCallback(() => {
-      console.log("User started speaking");
+      console.log("🎙️ User started speaking");
       setIsListening(true);
     }, [])
   );
@@ -101,12 +127,12 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   useRTVIClientEvent(
     RTVIEvent.UserStoppedSpeaking,
     useCallback(() => {
-      console.log("User stopped speaking");
+      console.log("🔇 User stopped speaking");
       setIsListening(false);
     }, [])
   );
 
-  // Send text message through Pipecat (this will be processed by the bot)
+  // Send text message through Pipecat
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || !isConnected) return;
 
@@ -122,21 +148,15 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
       
       setMessages(prev => [...prev, userMessage]);
       
-      // Send message to the bot through Pipecat
-      // This would typically be handled by injecting text into the conversation
-      // For now, we'll use a simple approach - in a real implementation,
-      // you might need to use specific Pipecat methods or your backend API
-      
-      console.log("Sending message to bot:", newMessage.trim());
+      // TODO: Send message to the bot through Pipecat
+      // This might require using pipecatClient.sendMessage() or similar
+      console.log("📤 Sending typed message to bot:", newMessage.trim());
       
       // Clear the input
       setNewMessage("");
       
-      // Note: The actual message sending might need to be handled differently
-      // depending on your Pipecat backend configuration
-      
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("❌ Failed to send message:", error);
     }
   }, [newMessage, isConnected]);
 
@@ -161,6 +181,14 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
     return message.isOwn ? 'You (Typed)' : 'Bot';
   };
 
+  // Debug info
+  useEffect(() => {
+    console.log("💬 Current messages count:", messages.length);
+    console.log("🎯 Current interim:", currentInterim);
+    console.log("👂 Is listening:", isListening);
+    console.log("🔗 Is connected:", isConnected);
+  }, [messages, currentInterim, isListening, isConnected]);
+
   return (
     <Card className="w-80 bg-gradient-card border-border/50 shadow-card flex flex-col h-full">
       {/* Chat Header */}
@@ -177,6 +205,11 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success animate-pulse-glow' : 'bg-muted'}`} />
           </div>
         </div>
+        
+        {/* Debug Info */}
+        <div className="text-xs text-muted-foreground mt-2">
+          Messages: {messages.length} | Interim: {currentInterim ? 'Yes' : 'No'} | Listening: {isListening ? 'Yes' : 'No'}
+        </div>
       </div>
       
       {/* Messages Area */}
@@ -188,6 +221,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
                 <>
                   <p>Connected! Start speaking or type a message.</p>
                   <p className="text-sm mt-2">The AI will respond in real-time.</p>
+                  <p className="text-xs mt-1 opacity-60">Check browser console for transcript events</p>
                 </>
               ) : (
                 <>
@@ -232,7 +266,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
                 <div className="flex justify-end">
                   <div className="max-w-[85%] p-3 rounded-lg bg-gradient-button/50 text-primary-foreground border-2 border-primary/30">
                     <div className="flex items-center gap-1 mb-1">
-                      <Mic size={12} className="opacity-70" />
+                      <Mic size={12} className="opacity-70 animate-pulse" />
                       <span className="text-xs opacity-70 font-medium">Speaking...</span>
                     </div>
                     <p className="text-sm leading-relaxed italic">{currentInterim}</p>
@@ -270,7 +304,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
           <div className="mt-2 text-xs text-muted-foreground text-center">
             {isListening ? (
               <span className="flex items-center justify-center gap-1">
-                <MicOff size={12} />
+                <Mic size={12} className="animate-pulse" />
                 Voice detected - speaking to AI
               </span>
             ) : (
