@@ -261,7 +261,8 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
                 </div>
               ))}
               
-              </>
+              
+            </>
           )}
         </div>
       </ScrollArea>
