@@ -66,39 +66,24 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
     }, [])
   );
 
-  // Listen to bot LLM text responses
-  useRTVIClientEvent(
-    RTVIEvent.BotLlmText,
-    useCallback((data: any) => {
-      console.log("Bot LLM text:", data);
-      
-      const message: Message = {
-        id: `bot-llm-${Date.now()}-${Math.random()}`,
-        text: data.text,
-        timestamp: new Date(),
-        isOwn: false,
-        type: 'text'
-      };
-      
-      setMessages(prev => [...prev, message]);
-    }, [])
-  );
-
-  // Listen to bot transcription (what the bot says)
+  // Listen to bot transcription (what the bot says) - ONLY THIS EVENT
   useRTVIClientEvent(
     RTVIEvent.BotTranscript,
     useCallback((data: any) => {
       console.log("Bot transcription:", data);
       
-      const message: Message = {
-        id: `bot-transcript-${Date.now()}`,
-        text: data.text,
-        timestamp: new Date(),
-        isOwn: false,
-        type: 'transcription'
-      };
-      
-      setMessages(prev => [...prev, message]);
+      // Only add if there's actual text content
+      if (data.text && data.text.trim()) {
+        const message: Message = {
+          id: `bot-transcript-${Date.now()}-${Math.random()}`,
+          text: data.text.trim(),
+          timestamp: new Date(),
+          isOwn: false,
+          type: 'transcription'
+        };
+        
+        setMessages(prev => [...prev, message]);
+      }
     }, [])
   );
 
@@ -169,9 +154,9 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
 
   const getMessageTypeLabel = (message: Message) => {
     if (message.type === 'transcription') {
-      return message.isOwn ? 'Spoken' : 'Bot Speech';
+      return message.isOwn ? 'Spoken' : 'Bot Response';
     }
-    return message.isOwn ? 'You' : 'AI Assistant';
+    return message.isOwn ? 'You' : 'Bot';
   };
 
   return (
