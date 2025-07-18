@@ -47,10 +47,10 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
       
       if (data.final) {
         // Final transcription - add as a permanent message
-        if (data.text.trim()) {
+        if (data.text && data.text.trim()) {
           const message: Message = {
-            id: `user-${Date.now()}`,
-            text: data.text,
+            id: `user-transcript-${Date.now()}`,
+            text: data.text.trim(),
             timestamp: new Date(data.timestamp || Date.now()),
             isOwn: true,
             type: 'transcription',
@@ -61,7 +61,9 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
         setCurrentInterim(""); // Clear interim text
       } else {
         // Interim transcription - show as temporary text
-        setCurrentInterim(data.text);
+        if (data.text) {
+          setCurrentInterim(data.text);
+        }
       }
     }, [])
   );
@@ -154,9 +156,9 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
 
   const getMessageTypeLabel = (message: Message) => {
     if (message.type === 'transcription') {
-      return message.isOwn ? 'Spoken' : 'Bot Response';
+      return message.isOwn ? 'You (Spoken)' : 'Bot Response';
     }
-    return message.isOwn ? 'You' : 'Bot';
+    return message.isOwn ? 'You (Typed)' : 'Bot';
   };
 
   return (
