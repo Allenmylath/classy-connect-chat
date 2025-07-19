@@ -82,7 +82,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
 
   // Listen to client ready event  
   useRTVIClientEvent(
-    RTVIEvent.ClientReady,
+    RTVIEvent.Connected,
     useCallback(() => {
       console.log("👤 Client is ready!");
     }, [])
