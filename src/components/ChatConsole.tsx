@@ -24,6 +24,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const pipecatClient = usePipecatClient();
@@ -121,7 +122,9 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
 
   // Send text message through Pipecat
   const handleSendMessage = useCallback(async () => {
-    if (!newMessage.trim() || !isConnected) return;
+    if (!newMessage.trim() || !isConnected || !pipecatClient) return;
+
+    setIsSendingMessage(true);
 
     try {
       // Add the user's typed message to the chat immediately
@@ -135,17 +138,34 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
       
       setMessages(prev => [...prev, userMessage]);
       
-      // TODO: Send message to the bot through Pipecat
-      // This might require using pipecatClient.sendMessage() or similar
+      // Send message to the bot through Pipecat
       console.log("📤 Sending typed message to bot:", newMessage.trim());
+      
+      await pipecatClient.appendToContext({
+        role: "user",
+        content: newMessage.trim(),
+        run_immediately: true
+      });
       
       // Clear the input
       setNewMessage("");
       
     } catch (error) {
       console.error("❌ Failed to send message:", error);
+      
+      // Show error message to user
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        text: "Failed to send message. Please try again.",
+        timestamp: new Date(),
+        isOwn: false,
+        type: 'text'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsSendingMessage(false);
     }
-  }, [newMessage, isConnected]);
+  }, [newMessage, isConnected, pipecatClient]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -173,7 +193,8 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
     console.log("💬 Current messages count:", messages.length);
     console.log("👂 Is listening:", isListening);
     console.log("🔗 Is connected:", isConnected);
-  }, [messages, isListening, isConnected]);
+    console.log("📤 Is sending message:", isSendingMessage);
+  }, [messages, isListening, isConnected, isSendingMessage]);
 
   return (
     <Card className="w-80 bg-gradient-card border-border/50 shadow-card flex flex-col h-full">
@@ -186,6 +207,12 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
               <div className="flex items-center gap-1 text-primary">
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                 <span className="text-xs">Listening</span>
+              </div>
+            )}
+            {isSendingMessage && (
+              <div className="flex items-center gap-1 text-blue-500">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-xs">Sending</span>
               </div>
             )}
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success animate-pulse-glow' : 'bg-muted'}`} />
@@ -257,12 +284,12 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={isConnected ? "Type a message..." : "Connect to start chatting"}
-            disabled={!isConnected}
+            disabled={!isConnected || isSendingMessage}
             className="flex-1 bg-background/50 border-border/50 focus:border-primary/50"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || !isConnected}
+            disabled={!newMessage.trim() || !isConnected || isSendingMessage}
             size="icon"
             variant="connect"
             className="rounded-full"
@@ -273,7 +300,12 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
         
         {isConnected && (
           <div className="mt-2 text-xs text-muted-foreground text-center">
-            {isListening ? (
+            {isSendingMessage ? (
+              <span className="flex items-center justify-center gap-1">
+                <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Sending message to bot...
+              </span>
+            ) : isListening ? (
               <span className="flex items-center justify-center gap-1">
                 <Mic size={12} className="animate-pulse" />
                 Voice detected - processing final transcript
