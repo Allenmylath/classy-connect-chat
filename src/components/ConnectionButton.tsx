@@ -16,21 +16,29 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
   
   const pipecatClient = usePipecatClient();
 
+  // Helper function to determine if we're in a "connected" state
+  const isConnectedState = (state: TransportState): boolean => {
+    return state === "connected" || state === "ready";
+  };
+
   // Listen to transport state changes
   useRTVIClientEvent(
     RTVIEvent.TransportStateChanged,
     useCallback((state: TransportState) => {
-      console.log("Transport state changed to:", state);
+      console.log("🔄 Transport state changed to:", state);
       setTransportState(state);
       
       // Reset connecting state when we reach a final state
-      if (state === "connected" || state === "disconnected" || state === "error") {
+      if (state === "connected" || state === "ready" || state === "disconnected" || state === "error") {
         setIsConnecting(false);
       }
 
+      // ✅ FIX: Consider both "connected" AND "ready" as connected
+      const connected = isConnectedState(state);
+      
       // Notify parent component of connection changes
       if (onConnectionChange) {
-        onConnectionChange(state === "connected");
+        onConnectionChange(connected);
       }
 
       // Show appropriate toasts
@@ -38,6 +46,11 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
         toast({
           title: "Connected!",
           description: "You are now connected to the video call.",
+        });
+      } else if (state === "ready") {
+        toast({
+          title: "Ready!",
+          description: "Bot is ready for conversation.",
         });
       } else if (state === "disconnected") {
         toast({
@@ -59,7 +72,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
   useRTVIClientEvent(
     RTVIEvent.BotReady,
     useCallback(() => {
-      console.log("Bot is ready!");
+      console.log("🤖 Bot is ready!");
       toast({
         title: "Bot Ready",
         description: "The AI assistant is now ready to chat.",
@@ -67,11 +80,11 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
     }, [toast])
   );
 
-  // Listen to client ready event
+  // Listen to client ready event  
   useRTVIClientEvent(
-    RTVIEvent.BotReady,
+    RTVIEvent.ClientReady,
     useCallback(() => {
-      console.log("Client is ready!");
+      console.log("👤 Client is ready!");
     }, [])
   );
 
@@ -91,7 +104,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
         },
       });
     } catch (error) {
-      console.error("Connection failed:", error);
+      console.error("❌ Connection failed:", error);
       setIsConnecting(false);
       toast({
         title: "Connection Failed",
@@ -110,7 +123,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
         variant: "destructive",
       });
     } catch (error) {
-      console.error("Disconnect failed:", error);
+      console.error("❌ Disconnect failed:", error);
       toast({
         title: "Disconnect Error",
         description: "Error while disconnecting. Please refresh the page.",
@@ -120,32 +133,39 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
   };
 
   const handleToggleConnection = () => {
-    if (transportState === "connected") {
+    const connected = isConnectedState(transportState);
+    if (connected) {
       handleDisconnect();
     } else {
       handleConnect();
     }
   };
 
-  const isConnected = transportState === "connected";
-  const isConnectingOrReady = transportState === "connecting" || transportState === "ready";
-  const isDisabled = isConnecting || isConnectingOrReady;
+  const connected = isConnectedState(transportState);
+  const isConnectingOrInitializing = transportState === "connecting" || 
+                                    transportState === "initializing" || 
+                                    transportState === "initialized" || 
+                                    transportState === "authenticating" || 
+                                    transportState === "authenticated";
+  const isDisabled = isConnecting || isConnectingOrInitializing;
 
   return (
     <div className="flex flex-col items-center gap-4">
       <Button
         onClick={handleToggleConnection}
         disabled={isDisabled}
-        variant={isConnected ? "disconnect" : "connect"}
+        variant={connected ? "disconnect" : "connect"}
         size="lg"
         className="px-8 py-4 text-lg font-semibold rounded-full shadow-elegant hover:shadow-glow transition-all duration-300"
       >
-        {isConnecting || isConnectingOrReady ? (
+        {isDisabled ? (
           <>
             <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            {transportState === "connecting" ? "Connecting..." : "Getting Ready..."}
+            {transportState === "connecting" ? "Connecting..." : 
+             transportState === "ready" ? "Getting Ready..." : 
+             "Initializing..."}
           </>
-        ) : isConnected ? (
+        ) : connected ? (
           <>
             <PhoneOff size={20} />
             Disconnect
@@ -160,7 +180,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
       
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          {isConnected 
+          {connected 
             ? "Click to end the call" 
             : "Click to start a video call with AI (Gemini + Cartesia)"
           }
