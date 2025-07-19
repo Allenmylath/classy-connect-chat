@@ -2,25 +2,17 @@ import { useState } from "react";
 import { VideoConsole } from "./VideoConsole";
 import { ChatConsole } from "./ChatConsole";
 import { ConnectionButton } from "./ConnectionButton";
-
 export function VideoCallApp() {
   const [isConnected, setIsConnected] = useState(false);
-
   const handleConnectionChange = (connected: boolean) => {
     setIsConnected(connected);
   };
-
-  return (
-    <div className="min-h-screen bg-background p-4">
+  return <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-            StreamConnect Pro
-          </h1>
-          <p className="text-muted-foreground">
-            Next-generation AI video calling with Pipecat integration
-          </p>
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">Jessicca AI Video connect</h1>
+          <p className="text-muted-foreground">Next-generation AI video calling </p>
         </div>
 
         {/* Main Content */}
@@ -44,6 +36,5 @@ export function VideoCallApp() {
           <p>Click connect to start your AI-powered video call experience</p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
