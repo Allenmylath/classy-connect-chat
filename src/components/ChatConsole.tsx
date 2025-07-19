@@ -124,13 +124,16 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || !isConnected || !pipecatClient) return;
 
-    setIsSendingMessage(true);
+    const messageText = newMessage.trim();
+    
+    // Clear the input immediately to allow new typing
+    setNewMessage("");
 
     try {
       // Add the user's typed message to the chat immediately
       const userMessage: Message = {
         id: `user-text-${Date.now()}`,
-        text: newMessage.trim(),
+        text: messageText,
         timestamp: new Date(),
         isOwn: true,
         type: 'text'
@@ -138,32 +141,39 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
       
       setMessages(prev => [...prev, userMessage]);
       
-      // Send message to the bot through Pipecat
-      console.log("📤 Sending typed message to bot:", newMessage.trim());
+      // Send message to the bot through Pipecat (fire and forget)
+      console.log("📤 Sending typed message to bot:", messageText);
       
-      await pipecatClient.appendToContext({
+      pipecatClient.appendToContext({
         role: "user",
-        content: newMessage.trim(),
+        content: messageText,
         run_immediately: true
+      }).catch((error) => {
+        console.error("❌ appendToContext failed:", error);
+        
+        // Show error message to user only if it actually fails
+        const errorMessage: Message = {
+          id: `error-${Date.now()}`,
+          text: "Failed to send message. Please try again.",
+          timestamp: new Date(),
+          isOwn: false,
+          type: 'text'
+        };
+        setMessages(prev => [...prev, errorMessage]);
       });
       
-      // Clear the input
-      setNewMessage("");
-      
     } catch (error) {
-      console.error("❌ Failed to send message:", error);
+      console.error("❌ Failed to process message:", error);
       
       // Show error message to user
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
-        text: "Failed to send message. Please try again.",
+        text: "Failed to process message. Please try again.",
         timestamp: new Date(),
         isOwn: false,
         type: 'text'
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsSendingMessage(false);
     }
   }, [newMessage, isConnected, pipecatClient]);
 
