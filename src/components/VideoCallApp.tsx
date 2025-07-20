@@ -16,9 +16,9 @@ export function VideoCallApp() {
         </div>
 
         {/* Main Content */}
-        <div className="flex gap-6 h-[calc(100vh-200px)]">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100vh-200px)]">
           {/* Video Section */}
-          <div className="flex-1 flex flex-col gap-6">
+          <div className="flex flex-col gap-4 lg:flex-1 h-1/2 lg:h-full">
             <VideoConsole isConnected={isConnected} />
             
             {/* Connection Controls */}
@@ -28,7 +28,9 @@ export function VideoCallApp() {
           </div>
 
           {/* Chat Section */}
-          <ChatConsole isConnected={isConnected} />
+          <div className="h-1/2 lg:h-full lg:w-96">
+            <ChatConsole isConnected={isConnected} />
+          </div>
         </div>
 
         {/* Footer */}
