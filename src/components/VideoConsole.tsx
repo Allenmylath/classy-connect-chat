@@ -140,7 +140,7 @@ export function VideoConsole({
           </div>}
 
         {/* Media Device Status */}
-        <div className="absolute bottom-20 left-4 flex flex-col gap-1">
+        <div className="absolute top-4 left-4 flex flex-col gap-1">
           {selectedCam && <div className="bg-black/50 text-white px-2 py-1 rounded text-xs">
               📹 {selectedCam.label || "Camera"}
             </div>}
