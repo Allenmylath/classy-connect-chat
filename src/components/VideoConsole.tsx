@@ -3,6 +3,7 @@ import { Video, VideoOff, Mic, MicOff, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePipecatClientCamControl, usePipecatClientMicControl, usePipecatClientMediaDevices, PipecatClientVideo } from "@pipecat-ai/client-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useRef, useEffect } from "react";
 interface VideoConsoleProps {
   isConnected: boolean;
 }
@@ -34,6 +35,27 @@ export function VideoConsole({
     updateCam,
     updateMic
   } = usePipecatClientMediaDevices();
+
+  // Settings dropdown state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  // Handle outside click for settings dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    if (isSettingsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSettingsOpen]);
   const handleToggleCamera = async () => {
     try {
       const newState = !isCamEnabled;
@@ -164,13 +186,20 @@ export function VideoConsole({
         </Button>
         
         {/* Settings/Device Selector */}
-        <div className="relative group">
-          <Button variant="ghost" size="icon" disabled={!isConnected} className="rounded-full hover:bg-primary/20 text-foreground transition-all duration-300" title="Media settings">
+        <div className="relative" ref={settingsRef}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            disabled={!isConnected} 
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            className="rounded-full hover:bg-primary/20 text-foreground transition-all duration-300" 
+            title="Media settings"
+          >
             <Settings size={20} />
           </Button>
           
           {/* Device Selection Dropdown */}
-          {isConnected && <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-background border border-border rounded-lg p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto min-w-48">
+          {isConnected && isSettingsOpen && <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-background border border-border rounded-lg p-3 shadow-lg z-50 min-w-48">
               
               {/* Camera Selection */}
               {availableCams.length > 0 && <div className="mb-3">
