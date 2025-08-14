@@ -11,7 +11,7 @@ export function VideoCallApp() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">Bot</h1>
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">Jessica AI Video Bot</h1>
           <p className="text-muted-foreground">Next-generation AI video calling </p>
         </div>
 
