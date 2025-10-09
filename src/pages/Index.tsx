@@ -1,7 +1,7 @@
-import { VideoCallApp } from "@/components/VideoCallApp";
+import Home from "./Home";
 
 const Index = () => {
-  return <VideoCallApp />;
+  return <Home />;
 };
 
 export default Index;
