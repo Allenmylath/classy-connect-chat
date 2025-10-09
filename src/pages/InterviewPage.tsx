@@ -1,12 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VideoConsole } from "@/components/VideoConsole";
 import { ChatConsole } from "@/components/ChatConsole";
 import { ConnectionButton } from "@/components/ConnectionButton";
+import { Clock } from "lucide-react";
 
 export default function InterviewPage() {
   const [isConnected, setIsConnected] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   const handleConnectionChange = (connected: boolean) => {
     setIsConnected(connected);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   return (
     <div className="min-h-screen bg-background p-4">
@@ -17,6 +35,14 @@ export default function InterviewPage() {
             WhiteKitty Interview Bot
           </h1>
           <p className="text-muted-foreground">AI-powered video interview experience</p>
+          
+          {/* Timer */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <Clock className="w-5 h-5 text-primary" />
+            <span className="text-2xl font-mono font-semibold text-foreground">
+              {formatTime(elapsedTime)}
+            </span>
+          </div>
         </div>
 
         {/* Main Content */}
