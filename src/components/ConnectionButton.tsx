@@ -88,6 +88,39 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
     }, [])
   );
 
+  // 🆕 Listen for server messages (conversation ending)
+  useRTVIClientEvent(
+    RTVIEvent.ServerMessage,
+    useCallback((message: any) => {
+      console.log("📨 Server message received:", message);
+      
+      // Check if this is a conversation ending message
+      if (message?.event === "conversation_ending" || message?.data?.event === "conversation_ending") {
+        console.log("👋 Conversation ending detected, disconnecting...");
+        
+        const goodbyeMessage = message?.message || message?.data?.message || "Goodbye!";
+        
+        // Show toast notification
+        toast({
+          title: "Conversation Ending",
+          description: goodbyeMessage,
+          duration: 3000,
+        });
+        
+        // Disconnect after a short delay to let the user see the message
+        setTimeout(async () => {
+          try {
+            if (pipecatClient) {
+              await pipecatClient.disconnect();
+            }
+          } catch (error) {
+            console.error("❌ Error during auto-disconnect:", error);
+          }
+        }, 1500);
+      }
+    }, [pipecatClient, toast])
+  );
+
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
