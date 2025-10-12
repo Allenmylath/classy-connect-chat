@@ -7,9 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ConnectionButtonProps {
   onConnectionChange?: (isConnected: boolean) => void;
+  onConversationEnd?: (score: number, summary: string) => void;
 }
 
-export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) {
+export function ConnectionButton({ onConnectionChange, onConversationEnd }: ConnectionButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [transportState, setTransportState] = useState<TransportState>("disconnected");
   const { toast } = useToast();
@@ -88,7 +89,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
     }, [])
   );
 
-  // 🆕 Listen for server messages (conversation ending)
+  // 🆕 Listen for server messages (conversation ending with score and summary)
   useRTVIClientEvent(
     RTVIEvent.ServerMessage,
     useCallback((message: any) => {
@@ -96,16 +97,26 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
       
       // Check if this is a conversation ending message
       if (message?.event === "conversation_ending" || message?.data?.event === "conversation_ending") {
-        console.log("👋 Conversation ending detected, disconnecting...");
+        console.log("👋 Conversation ending detected");
         
-        const goodbyeMessage = message?.message || message?.data?.message || "Goodbye!";
+        // Extract score and summary from the message
+        const score = message?.score ?? message?.data?.score ?? 0;
+        const summary = message?.summary ?? message?.data?.summary ?? "No summary available.";
+        
+        console.log("📊 Score:", score);
+        console.log("📝 Summary:", summary);
         
         // Show toast notification
         toast({
-          title: "Conversation Ending",
-          description: goodbyeMessage,
+          title: "Interview Complete",
+          description: "Your interview results are ready!",
           duration: 3000,
         });
+        
+        // Notify parent component with score and summary
+        if (onConversationEnd) {
+          onConversationEnd(score, summary);
+        }
         
         // Disconnect after a short delay to let the user see the message
         setTimeout(async () => {
@@ -118,7 +129,7 @@ export function ConnectionButton({ onConnectionChange }: ConnectionButtonProps) 
           }
         }, 1500);
       }
-    }, [pipecatClient, toast])
+    }, [pipecatClient, toast, onConversationEnd])
   );
 
   const handleConnect = async () => {
