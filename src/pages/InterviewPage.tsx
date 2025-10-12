@@ -2,23 +2,65 @@ import { useState, useEffect } from "react";
 import { VideoConsole } from "@/components/VideoConsole";
 import { ChatConsole } from "@/components/ChatConsole";
 import { ConnectionButton } from "@/components/ConnectionButton";
+import { ResultsModal } from "@/components/ResultsModal";
 import { Clock } from "lucide-react";
 
 export default function InterviewPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Results modal state
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [interviewScore, setInterviewScore] = useState(0);
+  const [interviewSummary, setInterviewSummary] = useState("");
 
   const handleConnectionChange = (connected: boolean) => {
     setIsConnected(connected);
+    
+    // Reset timer when disconnected
+    if (!connected) {
+      setElapsedTime(0);
+    }
+  };
+
+  const handleConversationEnd = (score: number, summary: string) => {
+    console.log("🎯 Interview ended with score:", score);
+    console.log("📋 Summary:", summary);
+    
+    // Store the results
+    setInterviewScore(score);
+    setInterviewSummary(summary);
+    
+    // Show the results modal
+    setShowResultsModal(true);
+  };
+
+  const handleStartNewInterview = () => {
+    // Reset all state
+    setShowResultsModal(false);
+    setInterviewScore(0);
+    setInterviewSummary("");
+    setElapsedTime(0);
+    
+    // Optionally reload the page for a fresh start
+    // window.location.reload();
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsedTime((prev) => prev + 1);
-    }, 1000);
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (isConnected) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    }
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isConnected]);
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -26,6 +68,7 @@ export default function InterviewPage() {
     const secs = seconds % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
@@ -53,7 +96,10 @@ export default function InterviewPage() {
             
             {/* Connection Controls */}
             <div className="flex justify-center">
-              <ConnectionButton onConnectionChange={handleConnectionChange} />
+              <ConnectionButton 
+                onConnectionChange={handleConnectionChange}
+                onConversationEnd={handleConversationEnd}
+              />
             </div>
           </div>
 
@@ -68,6 +114,15 @@ export default function InterviewPage() {
           <p>Click connect to start your AI-powered video call experience</p>
         </div>
       </div>
+
+      {/* Results Modal */}
+      <ResultsModal
+        isOpen={showResultsModal}
+        onClose={() => setShowResultsModal(false)}
+        score={interviewScore}
+        summary={interviewSummary}
+        onStartNew={handleStartNewInterview}
+      />
     </div>
   );
 }
