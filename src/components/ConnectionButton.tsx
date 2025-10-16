@@ -5,9 +5,23 @@ import { usePipecatClient, useRTVIClientEvent } from "@pipecat-ai/client-react";
 import { RTVIEvent, TransportState } from "@pipecat-ai/client-js";
 import { useToast } from "@/hooks/use-toast";
 
+export interface InterviewResults {
+  totalScore: number;
+  scoreBreakdown: {
+    technical_knowledge: number;
+    problem_solving: number;
+    safety_awareness: number;
+    soft_skills: number;
+    cultural_fit: number;
+    total_score: number;
+  };
+  summary: string;
+  redFlags: string[];
+}
+
 interface ConnectionButtonProps {
   onConnectionChange?: (isConnected: boolean) => void;
-  onConversationEnd?: (score: number, summary: string) => void;
+  onConversationEnd?: (results: InterviewResults) => void;
 }
 
 export function ConnectionButton({ onConnectionChange, onConversationEnd }: ConnectionButtonProps) {
@@ -99,12 +113,15 @@ export function ConnectionButton({ onConnectionChange, onConversationEnd }: Conn
       if (message?.event === "conversation_ending" || message?.data?.event === "conversation_ending") {
         console.log("👋 Conversation ending detected");
         
-        // Extract score and summary from the message
-        const score = message?.score ?? message?.data?.score ?? 0;
+        // Extract the full data structure from the message
+        const scoreBreakdown = message?.score_breakdown ?? message?.data?.score_breakdown;
+        const totalScore = scoreBreakdown?.total_score ?? 0;
         const summary = message?.summary ?? message?.data?.summary ?? "No summary available.";
+        const redFlags = message?.red_flags ?? message?.data?.red_flags ?? [];
         
-        console.log("📊 Score:", score);
+        console.log("📊 Score Breakdown:", scoreBreakdown);
         console.log("📝 Summary:", summary);
+        console.log("🚩 Red Flags:", redFlags);
         
         // Show toast notification
         toast({
@@ -113,9 +130,21 @@ export function ConnectionButton({ onConnectionChange, onConversationEnd }: Conn
           duration: 3000,
         });
         
-        // Notify parent component with score and summary
+        // Notify parent component with complete results
         if (onConversationEnd) {
-          onConversationEnd(score, summary);
+          onConversationEnd({
+            totalScore,
+            scoreBreakdown: scoreBreakdown ?? {
+              technical_knowledge: 0,
+              problem_solving: 0,
+              safety_awareness: 0,
+              soft_skills: 0,
+              cultural_fit: 0,
+              total_score: totalScore,
+            },
+            summary,
+            redFlags,
+          });
         }
         
         // Disconnect after a short delay to let the user see the message

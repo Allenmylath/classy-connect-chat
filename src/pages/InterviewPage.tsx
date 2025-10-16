@@ -3,6 +3,7 @@ import { VideoConsole } from "@/components/VideoConsole";
 import { ChatConsole } from "@/components/ChatConsole";
 import { ConnectionButton } from "@/components/ConnectionButton";
 import { ResultsModal } from "@/components/ResultsModal";
+import { InterviewResults } from "@/components/ConnectionButton";
 import { Clock } from "lucide-react";
 
 export default function InterviewPage() {
@@ -11,8 +12,7 @@ export default function InterviewPage() {
   
   // Results modal state
   const [showResultsModal, setShowResultsModal] = useState(false);
-  const [interviewScore, setInterviewScore] = useState(0);
-  const [interviewSummary, setInterviewSummary] = useState("");
+  const [interviewResults, setInterviewResults] = useState<InterviewResults | null>(null);
 
   const handleConnectionChange = (connected: boolean) => {
     setIsConnected(connected);
@@ -23,13 +23,11 @@ export default function InterviewPage() {
     }
   };
 
-  const handleConversationEnd = (score: number, summary: string) => {
-    console.log("🎯 Interview ended with score:", score);
-    console.log("📋 Summary:", summary);
+  const handleConversationEnd = (results: InterviewResults) => {
+    console.log("🎯 Interview ended with results:", results);
     
-    // Store the results
-    setInterviewScore(score);
-    setInterviewSummary(summary);
+    // Store the complete results
+    setInterviewResults(results);
     
     // Show the results modal
     setShowResultsModal(true);
@@ -38,12 +36,8 @@ export default function InterviewPage() {
   const handleStartNewInterview = () => {
     // Reset all state
     setShowResultsModal(false);
-    setInterviewScore(0);
-    setInterviewSummary("");
+    setInterviewResults(null);
     setElapsedTime(0);
-    
-    // Optionally reload the page for a fresh start
-    // window.location.reload();
   };
 
   useEffect(() => {
@@ -119,8 +113,7 @@ export default function InterviewPage() {
       <ResultsModal
         isOpen={showResultsModal}
         onClose={() => setShowResultsModal(false)}
-        score={interviewScore}
-        summary={interviewSummary}
+        results={interviewResults}
         onStartNew={handleStartNewInterview}
       />
     </div>

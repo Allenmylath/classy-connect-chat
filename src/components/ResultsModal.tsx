@@ -8,25 +8,65 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Star, TrendingUp, FileText, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Star, TrendingUp, FileText, X, AlertTriangle, Wrench, Lightbulb, Shield, MessageCircle, Handshake } from "lucide-react";
+import { InterviewResults } from "@/components/ConnectionButton";
 
 interface ResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  score: number;
-  summary: string;
+  results: InterviewResults | null;
   onStartNew?: () => void;
 }
+
+interface ScoreBarProps {
+  label: string;
+  score: number;
+  icon: React.ReactNode;
+}
+
+const ScoreBar = ({ label, score, icon }: ScoreBarProps) => {
+  const getColor = (score: number) => {
+    if (score >= 80) return "bg-green-500";
+    if (score >= 60) return "bg-yellow-500";
+    return "bg-orange-500";
+  };
+
+  const getTextColor = (score: number) => {
+    if (score >= 80) return "text-green-500";
+    if (score >= 60) return "text-yellow-500";
+    return "text-orange-500";
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium flex items-center gap-2">
+          {icon}
+          {label}
+        </span>
+        <span className={`text-sm font-semibold ${getTextColor(score)}`}>{score}%</span>
+      </div>
+      <div className="w-full bg-muted rounded-full h-2">
+        <div 
+          className={`${getColor(score)} h-2 rounded-full transition-all duration-500`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+    </div>
+  );
+};
 
 export function ResultsModal({
   isOpen,
   onClose,
-  score,
-  summary,
+  results,
   onStartNew,
 }: ResultsModalProps) {
-  // Calculate star rating (assuming score is out of 100)
-  const starRating = Math.round((score / 100) * 5);
+  if (!results) return null;
+
+  const { totalScore, scoreBreakdown, summary, redFlags } = results;
+  const starRating = Math.round((totalScore / 100) * 5);
 
   // Determine score color based on value
   const getScoreColor = (score: number) => {
@@ -35,30 +75,47 @@ export function ResultsModal({
     return "text-orange-500";
   };
 
+  // Category icons mapping
+  const categoryIcons = {
+    technical_knowledge: <Wrench className="w-4 h-4" />,
+    problem_solving: <Lightbulb className="w-4 h-4" />,
+    safety_awareness: <Shield className="w-4 h-4" />,
+    soft_skills: <MessageCircle className="w-4 h-4" />,
+    cultural_fit: <Handshake className="w-4 h-4" />,
+  };
+
+  // Format category names
+  const formatCategoryName = (key: string) => {
+    return key
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-primary" />
             Interview Results
           </DialogTitle>
           <DialogDescription>
-            Here's how you performed in your interview
+            Here's your detailed performance breakdown
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Score Section */}
+          {/* Overall Score Section */}
           <Card className="p-6 bg-gradient-card border-border/50">
             <div className="flex flex-col items-center gap-4">
               <h3 className="text-lg font-semibold text-muted-foreground">
-                Your Score
+                Overall Score
               </h3>
               
               {/* Large Score Display */}
-              <div className={`text-6xl font-bold ${getScoreColor(score)}`}>
-                {score}
+              <div className={`text-6xl font-bold ${getScoreColor(totalScore)}`}>
+                {totalScore}
                 <span className="text-3xl text-muted-foreground">/100</span>
               </div>
 
@@ -71,7 +128,7 @@ export function ResultsModal({
                     className={
                       index < starRating
                         ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
+                        : "text-muted"
                     }
                   />
                 ))}
@@ -79,18 +136,61 @@ export function ResultsModal({
 
               {/* Performance Label */}
               <div className="text-sm font-medium">
-                {score >= 80 && (
+                {totalScore >= 80 && (
                   <span className="text-green-500">Excellent Performance! 🎉</span>
                 )}
-                {score >= 60 && score < 80 && (
+                {totalScore >= 60 && totalScore < 80 && (
                   <span className="text-yellow-500">Good Performance! 👍</span>
                 )}
-                {score < 60 && (
+                {totalScore < 60 && (
                   <span className="text-orange-500">Keep Practicing! 💪</span>
                 )}
               </div>
             </div>
           </Card>
+
+          {/* Score Breakdown Section */}
+          <Card className="p-6 bg-gradient-card border-border/50">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold">Score Breakdown</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {Object.entries(scoreBreakdown)
+                  .filter(([key]) => key !== 'total_score')
+                  .map(([key, value]) => (
+                    <ScoreBar
+                      key={key}
+                      label={formatCategoryName(key)}
+                      score={value as number}
+                      icon={categoryIcons[key as keyof typeof categoryIcons]}
+                    />
+                  ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* Red Flags Section - Only show if there are red flags */}
+          {redFlags && redFlags.length > 0 && (
+            <Card className="p-6 bg-gradient-card border-border/50 border-orange-500/20">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-lg font-semibold text-orange-500">Areas for Improvement</h3>
+                </div>
+                
+                <ul className="space-y-2 ml-7">
+                  {redFlags.map((flag, index) => (
+                    <li key={index} className="text-sm text-foreground leading-relaxed">
+                      • {flag}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Card>
+          )}
 
           {/* Summary Section */}
           <Card className="p-6 bg-gradient-card border-border/50">
