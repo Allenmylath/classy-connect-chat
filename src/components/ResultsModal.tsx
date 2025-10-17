@@ -12,6 +12,14 @@ import { Progress } from "@/components/ui/progress";
 import { Star, TrendingUp, FileText, X, AlertTriangle, Wrench, Lightbulb, Shield, MessageCircle, Handshake } from "lucide-react";
 import { InterviewResults } from "@/components/ConnectionButton";
 
+const MAX_SCORES = {
+  technical_knowledge: 30,
+  problem_solving: 25,
+  safety_awareness: 20,
+  soft_skills: 15,
+  cultural_fit: 10,
+};
+
 interface ResultsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -22,19 +30,22 @@ interface ResultsModalProps {
 interface ScoreBarProps {
   label: string;
   score: number;
+  maxScore: number;
   icon: React.ReactNode;
 }
 
-const ScoreBar = ({ label, score, icon }: ScoreBarProps) => {
-  const getColor = (score: number) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
+const ScoreBar = ({ label, score, maxScore, icon }: ScoreBarProps) => {
+  const percentage = Math.round((score / maxScore) * 100);
+  
+  const getColor = (pct: number) => {
+    if (pct >= 80) return "bg-green-500";
+    if (pct >= 60) return "bg-yellow-500";
     return "bg-orange-500";
   };
 
-  const getTextColor = (score: number) => {
-    if (score >= 80) return "text-green-500";
-    if (score >= 60) return "text-yellow-500";
+  const getTextColor = (pct: number) => {
+    if (pct >= 80) return "text-green-500";
+    if (pct >= 60) return "text-yellow-500";
     return "text-orange-500";
   };
 
@@ -45,12 +56,14 @@ const ScoreBar = ({ label, score, icon }: ScoreBarProps) => {
           {icon}
           {label}
         </span>
-        <span className={`text-sm font-semibold ${getTextColor(score)}`}>{score}%</span>
+        <span className={`text-sm font-semibold ${getTextColor(percentage)}`}>
+          {score}/{maxScore} ({percentage}%)
+        </span>
       </div>
       <div className="w-full bg-muted rounded-full h-2">
         <div 
-          className={`${getColor(score)} h-2 rounded-full transition-all duration-500`}
-          style={{ width: `${score}%` }}
+          className={`${getColor(percentage)} h-2 rounded-full transition-all duration-500`}
+          style={{ width: `${percentage}%` }}
         />
       </div>
     </div>
@@ -165,6 +178,7 @@ export function ResultsModal({
                       key={key}
                       label={formatCategoryName(key)}
                       score={value as number}
+                      maxScore={MAX_SCORES[key as keyof typeof MAX_SCORES]}
                       icon={categoryIcons[key as keyof typeof categoryIcons]}
                     />
                   ))}
