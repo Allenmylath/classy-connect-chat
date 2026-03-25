@@ -25,6 +25,8 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isBotReady, setIsBotReady] = useState(false);
+  const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const pipecatClient = usePipecatClient();
