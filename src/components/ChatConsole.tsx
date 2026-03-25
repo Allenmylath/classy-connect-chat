@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Mic, MicOff } from "lucide-react";
+import { Send, Mic, MicOff, Lock, Play } from "lucide-react";
 import { usePipecatClient, useRTVIClientEvent } from "@pipecat-ai/client-react";
 import { RTVIEvent } from "@pipecat-ai/client-js";
 
@@ -25,6 +25,8 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
   const [newMessage, setNewMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isBotReady, setIsBotReady] = useState(false);
+  const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const pipecatClient = usePipecatClient();
@@ -120,7 +122,51 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
     }, [])
   );
 
-  // Send text message through Pipecat
+  // Listen to BotReady event
+  useRTVIClientEvent(
+    RTVIEvent.BotReady,
+    useCallback(() => {
+      console.log("🤖 Bot is ready!");
+      setIsBotReady(true);
+    }, [])
+  );
+
+  // Reset states when disconnected
+  useEffect(() => {
+    if (!isConnected) {
+      setIsBotReady(false);
+      setIsInterviewStarted(false);
+    }
+  }, [isConnected]);
+
+  // Handle Start Interview
+  const handleStartInterview = useCallback(async () => {
+    if (!pipecatClient || !isBotReady) return;
+    
+    setIsInterviewStarted(true);
+    
+    const startMessage: Message = {
+      id: `user-text-${Date.now()}`,
+      text: "Hi, I am fully ready to start the interview",
+      timestamp: new Date(),
+      isOwn: true,
+      type: 'text'
+    };
+    setMessages(prev => [...prev, startMessage]);
+    
+    try {
+      await pipecatClient.appendToContext({
+        role: "user",
+        content: "Hi, I am fully ready to start the interview",
+        run_immediately: true
+      });
+      console.log("✅ Start interview message sent");
+    } catch (error) {
+      console.error("❌ Failed to send start message:", error);
+    }
+  }, [pipecatClient, isBotReady]);
+
+
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || !isConnected || !pipecatClient) return;
 
@@ -237,53 +283,81 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
       
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              {isConnected ? (
-                <>
-                  <p>Connected! Start speaking or type a message.</p>
-                  <p className="text-sm mt-2">The AI will respond in real-time.</p>
-                  <p className="text-xs mt-1 opacity-60">Final transcripts only - no interim display</p>
-                </>
-              ) : (
-                <>
-                  <p>Connect to start chatting</p>
-                  <p className="text-sm">AI-powered conversation awaits!</p>
-                </>
-              )}
-            </div>
-          ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] p-3 rounded-lg shadow-sm animate-fade-in ${
-                    message.isOwn
-                      ? 'bg-gradient-button text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
+        {isConnected && !isInterviewStarted ? (
+          <div className="flex flex-col items-center justify-center h-full py-12 text-center">
+            <Lock size={32} className="text-muted-foreground mb-4" />
+            {isBotReady ? (
+              <>
+                <p className="text-foreground font-medium mb-2">Bot is ready!</p>
+                <p className="text-sm text-muted-foreground mb-4">Click below to begin your interview</p>
+                <Button
+                  onClick={handleStartInterview}
+                  variant="connect"
+                  className="gap-2"
                 >
-                  <div className="flex items-center gap-1 mb-1">
-                    {getMessageIcon(message)}
-                    <span className="text-xs opacity-70 font-medium">
-                      {getMessageTypeLabel(message)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed">{message.text}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                </div>
+                  <Play size={16} />
+                  Start Interview
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground font-medium mb-2">Waiting for bot...</p>
+                <p className="text-sm text-muted-foreground mb-4">Please wait while the bot initializes</p>
+                <Button disabled variant="secondary" className="gap-2">
+                  <Play size={16} />
+                  Start Interview
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                {isConnected ? (
+                  <>
+                    <p>Connected! Start speaking or type a message.</p>
+                    <p className="text-sm mt-2">The AI will respond in real-time.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>Connect to start chatting</p>
+                    <p className="text-sm">AI-powered conversation awaits!</p>
+                  </>
+                )}
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] p-3 rounded-lg shadow-sm animate-fade-in ${
+                      message.isOwn
+                        ? 'bg-gradient-button text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 mb-1">
+                      {getMessageIcon(message)}
+                      <span className="text-xs opacity-70 font-medium">
+                        {getMessageTypeLabel(message)}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </ScrollArea>
       
       {/* Message Input */}
@@ -293,13 +367,13 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={isConnected ? "Type a message..." : "Connect to start chatting"}
-            disabled={!isConnected || isSendingMessage}
+            placeholder={isInterviewStarted ? "Type a message..." : "Start interview first"}
+            disabled={!isConnected || !isInterviewStarted || isSendingMessage}
             className="flex-1 bg-background/50 border-border/50 focus:border-primary/50"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || !isConnected || isSendingMessage}
+            disabled={!newMessage.trim() || !isConnected || !isInterviewStarted || isSendingMessage}
             size="icon"
             variant="connect"
             className="rounded-full"
