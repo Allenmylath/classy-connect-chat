@@ -373,7 +373,7 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!newMessage.trim() || !isConnected || isSendingMessage}
+            disabled={!newMessage.trim() || !isConnected || !isInterviewStarted || isSendingMessage}
             size="icon"
             variant="connect"
             className="rounded-full"
