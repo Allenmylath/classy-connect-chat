@@ -283,53 +283,81 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
       
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              {isConnected ? (
-                <>
-                  <p>Connected! Start speaking or type a message.</p>
-                  <p className="text-sm mt-2">The AI will respond in real-time.</p>
-                  <p className="text-xs mt-1 opacity-60">Final transcripts only - no interim display</p>
-                </>
-              ) : (
-                <>
-                  <p>Connect to start chatting</p>
-                  <p className="text-sm">AI-powered conversation awaits!</p>
-                </>
-              )}
-            </div>
-          ) : (
-            messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] p-3 rounded-lg shadow-sm animate-fade-in ${
-                    message.isOwn
-                      ? 'bg-gradient-button text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  }`}
+        {isConnected && !isInterviewStarted ? (
+          <div className="flex flex-col items-center justify-center h-full py-12 text-center">
+            <Lock size={32} className="text-muted-foreground mb-4" />
+            {isBotReady ? (
+              <>
+                <p className="text-foreground font-medium mb-2">Bot is ready!</p>
+                <p className="text-sm text-muted-foreground mb-4">Click below to begin your interview</p>
+                <Button
+                  onClick={handleStartInterview}
+                  variant="connect"
+                  className="gap-2"
                 >
-                  <div className="flex items-center gap-1 mb-1">
-                    {getMessageIcon(message)}
-                    <span className="text-xs opacity-70 font-medium">
-                      {getMessageTypeLabel(message)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed">{message.text}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                </div>
+                  <Play size={16} />
+                  Start Interview
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground font-medium mb-2">Waiting for bot...</p>
+                <p className="text-sm text-muted-foreground mb-4">Please wait while the bot initializes</p>
+                <Button disabled variant="secondary" className="gap-2">
+                  <Play size={16} />
+                  Start Interview
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                {isConnected ? (
+                  <>
+                    <p>Connected! Start speaking or type a message.</p>
+                    <p className="text-sm mt-2">The AI will respond in real-time.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>Connect to start chatting</p>
+                    <p className="text-sm">AI-powered conversation awaits!</p>
+                  </>
+                )}
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] p-3 rounded-lg shadow-sm animate-fade-in ${
+                      message.isOwn
+                        ? 'bg-gradient-button text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 mb-1">
+                      {getMessageIcon(message)}
+                      <span className="text-xs opacity-70 font-medium">
+                        {getMessageTypeLabel(message)}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{message.text}</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </ScrollArea>
       
       {/* Message Input */}
