@@ -122,7 +122,51 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
     }, [])
   );
 
-  // Send text message through Pipecat
+  // Listen to BotReady event
+  useRTVIClientEvent(
+    RTVIEvent.BotReady,
+    useCallback(() => {
+      console.log("🤖 Bot is ready!");
+      setIsBotReady(true);
+    }, [])
+  );
+
+  // Reset states when disconnected
+  useEffect(() => {
+    if (!isConnected) {
+      setIsBotReady(false);
+      setIsInterviewStarted(false);
+    }
+  }, [isConnected]);
+
+  // Handle Start Interview
+  const handleStartInterview = useCallback(async () => {
+    if (!pipecatClient || !isBotReady) return;
+    
+    setIsInterviewStarted(true);
+    
+    const startMessage: Message = {
+      id: `user-text-${Date.now()}`,
+      text: "Hi, I am fully ready to start the interview",
+      timestamp: new Date(),
+      isOwn: true,
+      type: 'text'
+    };
+    setMessages(prev => [...prev, startMessage]);
+    
+    try {
+      await pipecatClient.appendToContext({
+        role: "user",
+        content: "Hi, I am fully ready to start the interview",
+        run_immediately: true
+      });
+      console.log("✅ Start interview message sent");
+    } catch (error) {
+      console.error("❌ Failed to send start message:", error);
+    }
+  }, [pipecatClient, isBotReady]);
+
+
   const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || !isConnected || !pipecatClient) return;
 
