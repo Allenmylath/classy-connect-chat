@@ -367,8 +367,8 @@ export function ChatConsole({ isConnected = false }: ChatConsoleProps) {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={isConnected ? "Type a message..." : "Connect to start chatting"}
-            disabled={!isConnected || isSendingMessage}
+            placeholder={isInterviewStarted ? "Type a message..." : "Start interview first"}
+            disabled={!isConnected || !isInterviewStarted || isSendingMessage}
             className="flex-1 bg-background/50 border-border/50 focus:border-primary/50"
           />
           <Button
