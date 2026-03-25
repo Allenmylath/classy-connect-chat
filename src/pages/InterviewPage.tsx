@@ -41,7 +41,7 @@ export default function InterviewPage() {
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     
     if (isConnected) {
       interval = setInterval(() => {
